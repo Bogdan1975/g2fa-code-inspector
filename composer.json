@@ -2,7 +2,7 @@
   "name": "targus/g2fa-code-inspector",
   "type": "symfony-bundle",
   "description": "Check google 2 factor authentication code if needed",
-  "version": "1.0.0-Alpha1",
+  "version": "1.0.0-Alpha2",
   "keywords": ["authentication", "google", "authenticator", "code", "inspector"],
   "license": "MIT",
   "authors": [
@@ -14,7 +14,7 @@
   ],
   "require": {
     "php": "~7.0",
-    "phpdocumentor/reflection-docblock": "~3.1",
+    "phpdocumentor/reflection-docblock": ">=3.1.0",
     "doctrine/orm": "~2.0",
     "doctrine/annotations": "1.*",
     "symfony/expression-language": "~4.0",
