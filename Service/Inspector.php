@@ -120,6 +120,9 @@ class Inspector
         foreach (array_keys($changeSet) as $propertyName) {
             $propertyReflection = self::$reflectionHelper->getPropertyReflection($entity, $propertyName);
             $propertyAnnontation = self::$reflectionHelper->getPropertyAnnotation($propertyReflection, Check::class);
+            if (!$propertyAnnontation) {
+                continue;
+            }
             switch ($operation) {
                 case 'GET':
                     $operatiomExpr = $propertyAnnontation->get;
