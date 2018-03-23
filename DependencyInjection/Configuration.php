@@ -35,7 +35,7 @@ class Configuration implements ConfigurationInterface
                     ->defaultValue(1)
                 ->end()
                 ->scalarNode('headerName')
-                    ->defaultValue('X-G2FA-VRIFICATION-CODE')
+                    ->defaultValue('X-G2FA-VERIFICATION-CODE')
                 ->end()
             ->end();
 
