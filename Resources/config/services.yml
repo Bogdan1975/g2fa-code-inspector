@@ -1,0 +1,16 @@
+services:
+
+    targus.reflection_helper:
+        class: Targus\G2faCodeInspector\Service\ReflectionHelper
+        arguments: ['@annotations.reader']
+
+    targus.inspector:
+        class: Targus\G2faCodeInspector\Service\Inspector
+        arguments: ['@doctrine.orm.entity_manager', '@targus.reflection_helper', '%targus.g2fa_code_inspector%']
+
+    targus.entity_voter:
+        class:      Targus\G2faCodeInspector\Security\Voter\EntityVoter
+        public:     false
+        arguments: ['@request_stack', '@doctrine.orm.entity_manager', '@targus.inspector', '%targus.g2fa_code_inspector%']
+        tags:
+            - { name: security.voter }
