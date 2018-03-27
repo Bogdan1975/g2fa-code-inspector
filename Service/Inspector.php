@@ -141,6 +141,9 @@ class Inspector
             if (!$needToCheck) {
                 return true;
             }
+            if (!$code) {
+                return false;
+            }
             $secretExpr = $propertyAnnontation->secret;
             $secret = $expressionLanguage->evaluate($secretExpr, ['user' => $user]);
 
