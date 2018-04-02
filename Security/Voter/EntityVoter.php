@@ -42,7 +42,6 @@ class EntityVoter extends Voter
 
     protected function supports($attribute, $subject)
     {
-
         return true;
     }
 

@@ -1,16 +1,26 @@
 services:
 
-    targus.reflection_helper:
+    targus.2fa.reflection_helper:
         class: Targus\G2faCodeInspector\Service\ReflectionHelper
         arguments: ['@annotations.reader']
 
-    targus.inspector:
+    targus.2fa.inspector:
         class: Targus\G2faCodeInspector\Service\Inspector
-        arguments: ['@doctrine.orm.entity_manager', '@targus.reflection_helper', '%targus.g2fa_code_inspector%']
+        arguments: ['@service_container', '@doctrine.orm.entity_manager', '@targus.2fa.reflection_helper', '%targus.g2fa_code_inspector%']
 
-    targus.entity_voter:
+    targus.2fa.entity_voter:
         class:      Targus\G2faCodeInspector\Security\Voter\EntityVoter
         public:     false
-        arguments: ['@request_stack', '@doctrine.orm.entity_manager', '@targus.inspector', '%targus.g2fa_code_inspector%']
+        arguments: ['@request_stack', '@doctrine.orm.entity_manager', '@targus.2fa.inspector', '%targus.g2fa_code_inspector%']
         tags:
             - { name: security.voter }
+
+    targus.2fa.ga_checker:
+        class:  Targus\G2faCodeInspector\Service\GAChecker
+        arguments: ['%targus.g2fa_code_inspector%']
+        public: true
+
+    targus.2fa.ga_definer:
+        class:  Targus\G2faCodeInspector\Service\GADefiner
+        arguments: ['@targus.2fa.ga_checker']
+        public: true

@@ -10,17 +10,19 @@ namespace Targus\G2faCodeInspector\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
 use PragmaRX\Google2FA\Google2FA;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Targus\G2faCodeInspector\Annotations\Check;
+use Targus\G2faCodeInspector\Annotations\Operation;
+use Targus\G2faCodeInspector\Exceptions\Exception;
+use Targus\G2faCodeInspector\Interfaces\CheckerDefinerInterface;
 
 class Inspector
 {
-    /** @var Google2FA */
-    protected $ga;
 
     /**
      * @var PropertyInfoExtractor
@@ -43,28 +45,14 @@ class Inspector
     private $em;
 
     /**
-     * @var bool
+     * @var ContainerInterface
      */
-    protected $oneTimeCode = false; // Use each code once
+    private $sc;
 
-    /**
-     * Window.
-     * @var int
-     */
-    protected $window = 1; // Keys will be valid for 60 seconds
-
-    public function __construct(EntityManagerInterface $em, ReflectionHelper $helper, $config)
+    public function __construct(ContainerInterface $sc, EntityManagerInterface $em, ReflectionHelper $helper, $config)
     {
+        $this->sc = $sc;
         $this->em = $em;
-
-        $this->ga = new Google2FA();
-
-        if (isset($config['oneTimeCode'])) {
-            $this->oneTimeCode = $config['oneTimeCode'];
-        }
-        if (isset($config['window'])) {
-            $this->window = $config['window'];
-        }
 
         // a full list of extractors is shown further below
         $phpDocExtractor = new PhpDocExtractor();
@@ -119,35 +107,49 @@ class Inspector
         $changeSet = $uof->getEntityChangeSet($entity);
         foreach (array_keys($changeSet) as $propertyName) {
             $propertyReflection = self::$reflectionHelper->getPropertyReflection($entity, $propertyName);
+            /** @var Check $propertyAnnontation */
             $propertyAnnontation = self::$reflectionHelper->getPropertyAnnotation($propertyReflection, Check::class);
             if (!$propertyAnnontation) {
                 continue;
             }
             switch ($operation) {
                 case 'GET':
-                    $operatiomExpr = $propertyAnnontation->get;
+                    $operationMeta = $propertyAnnontation->get;
                     break;
                 case 'PUT':
-                    $operatiomExpr = $propertyAnnontation->put;
+                    $operationMeta = $propertyAnnontation->put;
                     break;
                 case 'POST':
-                    $operatiomExpr = $propertyAnnontation->post;
+                    $operationMeta = $propertyAnnontation->post;
                     break;
                 default:
                     return true;
             }
+            /** @var $operationMeta Operation */
+            $operationExpr = $operationMeta->condition ?? $propertyAnnontation->condition;
             $expressionLanguage = new ExpressionLanguage();
-            $needToCheck = $operatiomExpr ? $expressionLanguage->evaluate($operatiomExpr, ['user' => $user, 'this' => $entity]) : false;
+            $needToCheck = $operationExpr ? $expressionLanguage->evaluate($operationExpr, ['user' => $user, 'this' => $entity, 'entity' => $entity]) : true;
             if (!$needToCheck) {
                 return true;
             }
             if (!$code) {
                 return false;
             }
-            $secretExpr = $propertyAnnontation->secret;
+            $secretExpr = $operationMeta->secret ?? $propertyAnnontation->secret;
             $secret = $expressionLanguage->evaluate($secretExpr, ['user' => $user]);
 
-            if (!$this->verify($code, $secret)) {
+            $definerId = $operationMeta->definer ?? $propertyAnnontation->definer ?? 'targus.2fa.ga_definer';
+            /** @var CheckerDefinerInterface $definer */
+            $definer = $this->sc->get($definerId);
+            if (!$definer) {
+                throw new Exception("Undefined service '{$definerId}'");
+            }
+            $checker = $definer->defineChecker($user, $entity, $operation, ['secret' => $secret]);
+            if (!$checker) {
+                return true;
+            }
+
+            if (!$checker->verify($code, $user, $entity, $operation, ['secret' => $secret])) {
                 return false;
             }
         }
