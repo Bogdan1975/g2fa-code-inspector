@@ -11,7 +11,7 @@ services:
     targus.2fa.entity_voter:
         class:      Targus\G2faCodeInspector\Security\Voter\EntityVoter
         public:     false
-        arguments: ['@request_stack', '@doctrine.orm.entity_manager', '@targus.2fa.inspector', '%targus.g2fa_code_inspector%']
+        arguments: ['@request_stack', '@doctrine.orm.entity_manager', '@security.token_storage', '@targus.2fa.inspector', '%targus.g2fa_code_inspector%']
         tags:
             - { name: security.voter }
 

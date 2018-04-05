@@ -6,8 +6,10 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Targus\G2faCodeInspector\Service\Inspector;
 
 class EntityVoter extends Voter
@@ -32,17 +34,23 @@ class EntityVoter extends Voter
      */
     private $inspector;
 
-    public function __construct(RequestStack $stack, EntityManagerInterface $em, Inspector $inspector, $config)
+    /**
+     * @var TokenStorageInterface
+     */
+    private $tokenStorage;
+
+    public function __construct(RequestStack $stack, EntityManagerInterface $em, TokenStorageInterface $tokenStorage, Inspector $inspector, $config)
     {
         $this->request = $stack->getCurrentRequest();
         $this->em = $em;
+        $this->tokenStorage = $tokenStorage;
         $this->inspector = $inspector;
         $this->config = $config;
     }
 
     protected function supports($attribute, $subject)
     {
-        return true;
+        return $this->tokenStorage->getToken()->getUser() instanceof UserInterface;
     }
 
     /**
