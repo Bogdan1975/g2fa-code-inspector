@@ -33,6 +33,6 @@ class Operation extends TargusAnnotation
     /**
      * @var string
      */
-    public $condition = "'true'";
+    public $condition = "true";
 
 }
