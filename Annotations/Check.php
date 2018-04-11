@@ -39,7 +39,7 @@ class Check extends TargusAnnotation
     /**
      * @var string
      */
-    public $condition = "'true'";
+    public $condition = "'false'";
 
     /**
      * @var Operation

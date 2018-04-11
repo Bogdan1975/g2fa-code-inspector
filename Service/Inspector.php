@@ -131,7 +131,7 @@ class Inspector
                     return true;
             }
             /** @var $operationMeta Operation */
-            $operationExpr = $operationMeta->condition ?? $propertyAnnontation->condition;
+            $operationExpr = $propertyAnnontation->condition ?? $operationMeta->condition;
             $expressionLanguage = new ExpressionLanguage();
             $needToCheck = $operationExpr ? $expressionLanguage->evaluate($operationExpr, ['user' => $user, 'this' => $entity, 'entity' => $entity]) : true;
             if (!$needToCheck) {
@@ -140,10 +140,10 @@ class Inspector
             if (!$code) {
                 return false;
             }
-            $secretExpr = $operationMeta->secret ?? $propertyAnnontation->secret;
+            $secretExpr = $propertyAnnontation->secret ?? $operationMeta->secret;
             $secret = $expressionLanguage->evaluate($secretExpr, ['user' => $user]);
 
-            $definerId = $operationMeta->definer ?? $propertyAnnontation->definer ?? $this->config['defaultDefiner'];
+            $definerId = $propertyAnnontation->definer ?? $operationMeta->definer ?? $this->config['defaultDefiner'];
             /** @var CheckerDefinerInterface $definer */
             $definer = $this->sc->get($definerId);
             if (!$definer) {
