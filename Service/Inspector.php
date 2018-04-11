@@ -137,9 +137,6 @@ class Inspector
             if (!$needToCheck) {
                 return true;
             }
-            if (!$code) {
-                return false;
-            }
             $secretExpr = $operationMeta->secret ?? $propertyAnnontation->secret;
             $secret = $expressionLanguage->evaluate($secretExpr, ['user' => $user]);
 
@@ -152,6 +149,9 @@ class Inspector
             $checker = $definer->defineChecker($user, $entity, $operation, ['secret' => $secret]);
             if (!$checker) {
                 return true;
+            }
+            if (!$code) {
+                return false;
             }
 
             if (!$checker->verify($code, $user, $entity, $operation, ['secret' => $secret])) {
