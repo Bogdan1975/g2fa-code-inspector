@@ -28,6 +28,9 @@ class Configuration implements ConfigurationInterface
 
         $rootNode
             ->children()
+                ->scalarNode('defaultDefiner')
+                    ->defaultValue('targus.2fa.ga_definer')
+                ->end()
                 ->scalarNode('oneTimeCode')
                     ->defaultValue(false)
                 ->end()

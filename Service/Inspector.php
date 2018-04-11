@@ -9,7 +9,6 @@
 namespace Targus\G2faCodeInspector\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
-use PragmaRX\Google2FA\Google2FA;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
@@ -49,10 +48,16 @@ class Inspector
      */
     private $sc;
 
+    /**
+     * @var array
+     */
+    private $config;
+
     public function __construct(ContainerInterface $sc, EntityManagerInterface $em, ReflectionHelper $helper, $config)
     {
         $this->sc = $sc;
         $this->em = $em;
+        $this->config = $config;
 
         // a full list of extractors is shown further below
         $phpDocExtractor = new PhpDocExtractor();
@@ -138,7 +143,7 @@ class Inspector
             $secretExpr = $operationMeta->secret ?? $propertyAnnontation->secret;
             $secret = $expressionLanguage->evaluate($secretExpr, ['user' => $user]);
 
-            $definerId = $operationMeta->definer ?? $propertyAnnontation->definer ?? 'targus.2fa.ga_definer';
+            $definerId = $operationMeta->definer ?? $propertyAnnontation->definer ?? $this->config['defaultDefiner'];
             /** @var CheckerDefinerInterface $definer */
             $definer = $this->sc->get($definerId);
             if (!$definer) {
