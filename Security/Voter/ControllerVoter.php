@@ -12,7 +12,7 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Targus\G2faCodeInspector\Service\Inspector;
 
-class EntityVoter extends Voter
+class ControllerVoter extends Voter
 {
     /**
      * @var Request
@@ -50,9 +50,7 @@ class EntityVoter extends Voter
 
     protected function supports($attribute, $subject)
     {
-        $isUser = $this->tokenStorage->getToken()->getUser() instanceof UserInterface;
-        $isApiPlatform = (bool)$this->request->attributes->get('_api_normalization_context');
-        return $isUser && $isApiPlatform;
+        return $attribute === $this->config['grantAttributeName'];
     }
 
     /**
@@ -65,13 +63,23 @@ class EntityVoter extends Voter
     protected function voteOnAttribute($attribute, $subject, TokenInterface $token)
     {
         $user = $token->getUser();
-        $subject = $this->request->attributes->get('data');
-        $context = $this->request->attributes->get('_api_normalization_context');
-        $code = $this->request->headers->get($this->config['headerName']);
-        if ($context) {
-            return $this->inspector->resolve($subject, $user, $context, $code);
+        if (!$user instanceof UserInterface) {
+            return false;
         }
+        $code = $this->request->headers->get($this->config['headerName']);
+        $controllerString = $this->request->attributes->get('_controller');
+        if (!$controllerString) {
+            return false;
+        }
+        $tmp = explode('::', $controllerString);
+        if (!is_array($tmp) || !(count($tmp) === 2)) {
+            return false;
+        }
+        $controller = [
+            'class' => $tmp[0],
+            'method' => $tmp[1],
+        ];
 
-        return true;
+        return $this->inspector->resolveController($user, $code, $controller);
     }
 }

@@ -15,6 +15,13 @@ services:
         tags:
             - { name: security.voter }
 
+    targus.2fa.controller_voter:
+        class:      Targus\G2faCodeInspector\Security\Voter\ControllerVoter
+        public:     false
+        arguments: ['@request_stack', '@doctrine.orm.entity_manager', '@security.token_storage', '@targus.2fa.inspector', '%targus.g2fa_code_inspector%']
+        tags:
+            - { name: security.voter }
+
     targus.2fa.ga_checker:
         class:  Targus\G2faCodeInspector\Service\GAChecker
         arguments: ['%targus.g2fa_code_inspector%']

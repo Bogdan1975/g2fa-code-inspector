@@ -55,7 +55,36 @@ class ReflectionHelper
     }
 
     /**
-     * @param $arg
+     * @param mixed $arg
+     * @param string $methodName
+     * @return \ReflectionMethod
+     * @throws Exception
+     * @throws \ReflectionException
+     */
+    public function getMethodReflection($arg, $methodName): \ReflectionMethod
+    {
+        return static::getMethodReflectionStatic($arg, $methodName);
+    }
+
+    /**
+     * @param mixed $arg
+     * @param string $methodName
+     * @return \ReflectionMethod
+     * @throws Exception
+     * @throws \ReflectionException
+     */
+    public static function getMethodReflectionStatic($arg, $methodName): \ReflectionMethod
+    {
+        $className = self::checkReflectionClassStatic($arg);
+        if (!array_key_exists($methodName, static::$reflections[$className]['methods']) || !static::$reflections[$className]['methods'][$methodName]) {
+            static::$reflections[$className]['methods'][$methodName] = new \ReflectionMethod($className, $methodName);
+        }
+
+        return static::$reflections[$className]['methods'][$methodName];
+    }
+
+    /**
+     * @param mixed$arg
      * @param $propertyName
      * @return \ReflectionProperty
      * @throws \Exception
@@ -145,6 +174,39 @@ class ReflectionHelper
         return static::$reflections[$className]['parent'];
     }
 
+    /**
+     * @param \ReflectionMethod $method
+     * @param string $className
+     * @return null|object
+     */
+    public function getMethodAnnotation(\ReflectionMethod $method, $className)
+    {
+        return static::getMethodAnnotationStatic($method, $className);
+    }
+
+    /**
+     * @param \ReflectionMethod $method
+     * @param string $className
+     * @return object|null
+     */
+    public static function getMethodAnnotationStatic(\ReflectionMethod $method, $className)
+    {
+        if (!array_key_exists($className, static::$annotations)) {
+            static::$annotations[$className] = [];
+        }
+        $methodName = $method->getName();
+        if (!array_key_exists($methodName, static::$annotations[$className]) || !static::$annotations[$className][$methodName]) {
+            static::$annotations[$className][$methodName] = static::$annotationReader->getMethodAnnotation($method, $className);
+        }
+
+        return static::$annotations[$className][$methodName];
+    }
+
+    /**
+     * @param \ReflectionProperty $property
+     * @param string $className
+     * @return null|object
+     */
     public function getPropertyAnnotation(\ReflectionProperty $property, $className)
     {
         return static::getPropertyAnnotationStatic($property, $className);
@@ -152,8 +214,8 @@ class ReflectionHelper
 
     /**
      * @param \ReflectionProperty $property
-     * @param $className
-     * @return mixed
+     * @param string $className
+     * @return object|null
      */
     public static function getPropertyAnnotationStatic(\ReflectionProperty $property, $className)
     {
@@ -214,6 +276,7 @@ class ReflectionHelper
             static::$reflections[$className]['parent'] = null;
             static::$reflections[$className]['properties'] = [];
             static::$reflections[$className]['hasAllProperties'] = false;
+            static::$reflections[$className]['methods'] = [];
         }
 
         return $className;

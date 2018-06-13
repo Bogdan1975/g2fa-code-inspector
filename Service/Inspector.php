@@ -162,6 +162,45 @@ class Inspector
         return true;
     }
 
+    public function resolveController($user, $code, array $controller)
+    {
+        $methodReflection = self::$reflectionHelper->getMethodReflection($controller['class'], $controller['method']);
+        /** @var Check $propertyAnnontation */
+        $methodAnnontation = self::$reflectionHelper->getMethodAnnotation($methodReflection, Check::class);
+        if (null === $methodAnnontation) {
+            $methodAnnontation = new Check();
+        }
+
+        $operationExpr = $methodAnnontation->condition;
+        $expressionLanguage = new ExpressionLanguage();
+        $needToCheck = $operationExpr ? $expressionLanguage->evaluate($operationExpr, ['user' => $user]) : true;
+        if (!$needToCheck) {
+            return true;
+        }
+        $secretExpr = $methodAnnontation->secret;
+        $secret = $secretExpr ? $expressionLanguage->evaluate($secretExpr, ['user' => $user]) : null;
+
+        $definerId = $methodAnnontation->definer ?? $this->config['defaultDefiner'];
+        /** @var CheckerDefinerInterface $definer */
+        $definer = $this->sc->get($definerId);
+        if (!$definer) {
+            throw new Exception("Undefined service '{$definerId}'");
+        }
+        $checker = $definer->defineChecker($user, null, null, ['secret' => $secret]);
+        if (!$checker) {
+            return true;
+        }
+        if (!$code) {
+            return false;
+        }
+
+        if (!$checker->verify($code, $user, null, null, ['secret' => $secret])) {
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * @param string $code
      * @param string $secret

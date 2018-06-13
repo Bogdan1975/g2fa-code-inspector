@@ -40,6 +40,9 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('headerName')
                     ->defaultValue('X-2FA-VERIFICATION-CODE')
                 ->end()
+                ->scalarNode('grantAttributeName')
+                    ->defaultValue('Controller2FA')
+                ->end()
             ->end();
 
         // Here you should define the parameters that are allowed to

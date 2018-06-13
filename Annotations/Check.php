@@ -21,7 +21,7 @@ use Targus\G2faCodeInspector\Interfaces\CheckerDefinerInterface;
  * @author Bogdan Shapoval <it.targus@gmail.com>. 14.07.2017
  *
  * @Annotation()
- * @Target({"PROPERTY"})
+ * @Target({"PROPERTY", "METHOD"})
  */
 class Check extends TargusAnnotation
 {
