@@ -8,11 +8,22 @@
 
 namespace Targus\G2faCodeInspector\Interfaces;
 
-
 use Symfony\Component\Security\Core\User\UserInterface;
 
+
+/**
+ * Interface CheckerDefinerInterface
+ * @package Targus\G2faCodeInspector\Interfaces
+ */
 interface CheckerDefinerInterface
 {
-
+    /**
+     * @param UserInterface $user
+     * @param mixed         $entity
+     * @param string        $method
+     * @param array         $payload
+     *
+     * @return CodeCheckerInterface|null
+     */
     public function defineChecker(UserInterface $user, $entity, $method = 'PUT', array $payload = []): ?CodeCheckerInterface;
 }

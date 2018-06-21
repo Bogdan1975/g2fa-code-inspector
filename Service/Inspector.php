@@ -20,9 +20,13 @@ use Targus\G2faCodeInspector\Annotations\Operation;
 use Targus\G2faCodeInspector\Exceptions\Exception;
 use Targus\G2faCodeInspector\Interfaces\CheckerDefinerInterface;
 
+
+/**
+ * Class Inspector
+ * @package Targus\G2faCodeInspector\Service
+ */
 class Inspector
 {
-
     /**
      * @var PropertyInfoExtractor
      */
@@ -53,6 +57,15 @@ class Inspector
      */
     private $config;
 
+
+    /**
+     * Inspector constructor.
+     *
+     * @param ContainerInterface     $sc
+     * @param EntityManagerInterface $em
+     * @param ReflectionHelper       $helper
+     * @param array                  $config
+     */
     public function __construct(ContainerInterface $sc, EntityManagerInterface $em, ReflectionHelper $helper, $config)
     {
         $this->sc = $sc;
@@ -83,23 +96,23 @@ class Inspector
         );
         self::$propertyInfoExtractor = $propertyInfo;
 
-
         self::$instance = $this;
 
         self::$reflectionHelper = $helper;
     }
 
     /**
-     * @param $entity
+     * @param mixed         $entity
      * @param UserInterface $user
-     * @param array $context
-     * @param $code
+     * @param array         $context
+     * @param string        $code
      *
      * @return bool
      *
      * @throws \Exception
      */
-    public function resolve($entity, UserInterface $user, array $context, $code) {
+    public function resolve($entity, UserInterface $user, array $context, $code)
+    {
         if (!array_key_exists('operation_type', $context) || $context['operation_type'] !== 'item') {
             return true;
         }
@@ -112,35 +125,35 @@ class Inspector
         $changeSet = $uof->getEntityChangeSet($entity);
         foreach (array_keys($changeSet) as $propertyName) {
             $propertyReflection = self::$reflectionHelper->getPropertyReflection($entity, $propertyName);
-            /** @var Check $propertyAnnontation */
-            $propertyAnnontation = self::$reflectionHelper->getPropertyAnnotation($propertyReflection, Check::class);
-            if (!$propertyAnnontation) {
+            /** @var Check $propertyAnnotation */
+            $propertyAnnotation = self::$reflectionHelper->getPropertyAnnotation($propertyReflection, Check::class);
+            if (!$propertyAnnotation) {
                 continue;
             }
             switch ($operation) {
                 case 'GET':
-                    $operationMeta = $propertyAnnontation->get;
+                    $operationMeta = $propertyAnnotation->get;
                     break;
                 case 'PUT':
-                    $operationMeta = $propertyAnnontation->put;
+                    $operationMeta = $propertyAnnotation->put;
                     break;
                 case 'POST':
-                    $operationMeta = $propertyAnnontation->post;
+                    $operationMeta = $propertyAnnotation->post;
                     break;
                 default:
                     return true;
             }
             /** @var $operationMeta Operation */
-            $operationExpr = $operationMeta->condition ?? $propertyAnnontation->condition ?? false;
+            $operationExpr = $operationMeta->condition ?? $propertyAnnotation->condition ?? false;
             $expressionLanguage = new ExpressionLanguage();
             $needToCheck = $operationExpr ? $expressionLanguage->evaluate($operationExpr, ['user' => $user, 'this' => $entity, 'entity' => $entity]) : true;
             if (!$needToCheck) {
                 continue;
             }
-            $secretExpr = $operationMeta->secret ?? $propertyAnnontation->secret;
+            $secretExpr = $operationMeta->secret ?? $propertyAnnotation->secret;
             $secret = $expressionLanguage->evaluate($secretExpr, ['user' => $user]);
 
-            $definerId = $operationMeta->definer ?? $propertyAnnontation->definer ?? $this->config['defaultDefiner'];
+            $definerId = $operationMeta->definer ?? $propertyAnnotation->definer ?? $this->config['defaultDefiner'];
             /** @var CheckerDefinerInterface $definer */
             $definer = $this->sc->get($definerId);
             if (!$definer) {
@@ -149,9 +162,6 @@ class Inspector
             $checker = $definer->defineChecker($user, $entity, $operation, ['secret' => $secret]);
             if (!$checker) {
                 continue;
-            }
-            if (!$code) {
-                return false;
             }
 
             if (!$checker->verify($code, $user, $entity, $operation, ['secret' => $secret])) {
@@ -162,25 +172,34 @@ class Inspector
         return true;
     }
 
+    /**
+     * @param        $user
+     * @param string $code
+     * @param array  $controller
+     *
+     * @return bool
+     * @throws Exception
+     * @throws \ReflectionException
+     */
     public function resolveController($user, $code, array $controller)
     {
         $methodReflection = self::$reflectionHelper->getMethodReflection($controller['class'], $controller['method']);
-        /** @var Check $propertyAnnontation */
-        $methodAnnontation = self::$reflectionHelper->getMethodAnnotation($methodReflection, Check::class);
-        if (null === $methodAnnontation) {
-            $methodAnnontation = new Check();
+        /** @var Check $propertyAnnotation */
+        $methodAnnotation = self::$reflectionHelper->getMethodAnnotation($methodReflection, Check::class);
+        if (null === $methodAnnotation) {
+            $methodAnnotation = new Check();
         }
 
-        $operationExpr = $methodAnnontation->condition ?? true;
+        $operationExpr = $methodAnnotation->condition ?? true;
         $expressionLanguage = new ExpressionLanguage();
         $needToCheck = $operationExpr ? $expressionLanguage->evaluate($operationExpr, ['user' => $user]) : true;
         if (!$needToCheck) {
             return true;
         }
-        $secretExpr = $methodAnnontation->secret;
+        $secretExpr = $methodAnnotation->secret;
         $secret = $secretExpr ? $expressionLanguage->evaluate($secretExpr, ['user' => $user]) : null;
 
-        $definerId = $methodAnnontation->definer ?? $this->config['defaultDefiner'];
+        $definerId = $methodAnnotation->definer ?? $this->config['defaultDefiner'];
         /** @var CheckerDefinerInterface $definer */
         $definer = $this->sc->get($definerId);
         if (!$definer) {
@@ -190,37 +209,12 @@ class Inspector
         if (!$checker) {
             return true;
         }
-        if (!$code) {
-            return false;
-        }
 
         if (!$checker->verify($code, $user, null, null, ['secret' => $secret])) {
             return false;
         }
 
         return true;
-    }
-
-    /**
-     * @param string $code
-     * @param string $secret
-     * @param int    $oldTimestamp
-     *
-     * @return bool
-     */
-    private function verify(string $code, string $secret = null, int $oldTimestamp = null)
-    {
-        if ($this->oneTimeCode) {
-            $timestamp = $this->ga->verifyKeyNewer($secret, $code, $oldTimestamp, $this->window);
-
-            if ($timestamp) {
-                // store
-            }
-        } else {
-            $timestamp = $this->ga->verify($code, $secret, $this->window);
-        }
-
-        return (bool)$timestamp;
     }
 
 }

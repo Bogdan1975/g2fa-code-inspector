@@ -8,14 +8,17 @@
 
 namespace Targus\G2faCodeInspector\Service;
 
-
 use PragmaRX\Google2FA\Google2FA;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Targus\G2faCodeInspector\Interfaces\CodeCheckerInterface;
 
+
+/**
+ * Class GAChecker
+ * @package Targus\G2faCodeInspector\Service
+ */
 class GAChecker implements CodeCheckerInterface
 {
-
     /** @var Google2FA */
     protected $ga;
 
@@ -30,6 +33,11 @@ class GAChecker implements CodeCheckerInterface
      */
     protected $window = 1; // Keys will be valid for 60 seconds
 
+    /**
+     * GAChecker constructor.
+     *
+     * @param $config
+     */
     public function __construct($config)
     {
         $this->ga = new Google2FA();
@@ -42,8 +50,22 @@ class GAChecker implements CodeCheckerInterface
         }
     }
 
+    /**
+     * @param string        $code
+     * @param UserInterface $user
+     * @param mixed         $entity
+     * @param string        $method
+     * @param array         $payload
+     *
+     * @return bool
+     * @throws \Exception
+     */
     public function verify($code, UserInterface $user, $entity, $method = 'PUT', array $payload = []): bool
     {
+        if (!$code) {
+            return false;
+        }
+
         $oldTimestamp = $payload['oldTimestamp'] ?? null;
         $secret = $payload['secret'] ?? null;
         if ($this->oneTimeCode) {
