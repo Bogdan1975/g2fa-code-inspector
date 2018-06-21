@@ -131,7 +131,7 @@ class Inspector
                     return true;
             }
             /** @var $operationMeta Operation */
-            $operationExpr = $operationMeta->condition ?? $propertyAnnontation->condition;
+            $operationExpr = $operationMeta->condition ?? $propertyAnnontation->condition ?? false;
             $expressionLanguage = new ExpressionLanguage();
             $needToCheck = $operationExpr ? $expressionLanguage->evaluate($operationExpr, ['user' => $user, 'this' => $entity, 'entity' => $entity]) : true;
             if (!$needToCheck) {
@@ -171,7 +171,7 @@ class Inspector
             $methodAnnontation = new Check();
         }
 
-        $operationExpr = $methodAnnontation->condition;
+        $operationExpr = $methodAnnontation->condition ?? true;
         $expressionLanguage = new ExpressionLanguage();
         $needToCheck = $operationExpr ? $expressionLanguage->evaluate($operationExpr, ['user' => $user]) : true;
         if (!$needToCheck) {
