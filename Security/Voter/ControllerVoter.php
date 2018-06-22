@@ -12,6 +12,11 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Targus\G2faCodeInspector\Service\Inspector;
 
+
+/**
+ * Class ControllerVoter
+ * @package Targus\G2faCodeInspector\Security\Voter
+ */
 class ControllerVoter extends Voter
 {
     /**
