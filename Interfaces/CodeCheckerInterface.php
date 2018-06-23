@@ -22,5 +22,5 @@ interface CodeCheckerInterface
      *
      * @return bool
      */
-    public function verify(?string $code, ?UserInterface $user, $entity = null, string $method = null, array $payload = []): bool;
+    public function verify(?string $code, ?UserInterface $user, $entity, ?string $method, array $payload = []): bool;
 }
