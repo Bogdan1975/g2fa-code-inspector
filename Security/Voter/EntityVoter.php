@@ -54,9 +54,7 @@ class EntityVoter extends Voter
 
     protected function supports($attribute, $subject)
     {
-        $isUser = $this->tokenStorage->getToken()->getUser() instanceof UserInterface;
-        $isApiPlatform = (bool)$this->request->attributes->get('_api_normalization_context');
-        return $isUser && $isApiPlatform;
+        return (bool)$this->request->attributes->get('_api_normalization_context');
     }
 
     /**
@@ -69,6 +67,10 @@ class EntityVoter extends Voter
     protected function voteOnAttribute($attribute, $subject, TokenInterface $token)
     {
         $user = $token->getUser();
+        if (!$user instanceof UserInterface) {
+            $user = null;
+        }
+
         $subject = $this->request->attributes->get('data');
         $context = $this->request->attributes->get('_api_normalization_context');
         $code = $this->request->headers->get($this->config['headerName']);

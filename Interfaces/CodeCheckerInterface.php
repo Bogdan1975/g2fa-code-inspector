@@ -8,10 +8,19 @@
 
 namespace Targus\G2faCodeInspector\Interfaces;
 
-
 use Symfony\Component\Security\Core\User\UserInterface;
+
 
 interface CodeCheckerInterface
 {
-    public function verify($code, UserInterface $user, $entity, $method = 'PUT', array $payload = []): bool;
+    /**
+     * @param string        $code
+     * @param UserInterface $user
+     * @param mixed         $entity
+     * @param string        $method
+     * @param array         $payload
+     *
+     * @return bool
+     */
+    public function verify(?string $code, ?UserInterface $user, $entity = null, string $method = null, array $payload = []): bool;
 }

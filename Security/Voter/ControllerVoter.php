@@ -69,8 +69,9 @@ class ControllerVoter extends Voter
     {
         $user = $token->getUser();
         if (!$user instanceof UserInterface) {
-            return false;
+            $user = null;
         }
+
         $code = $this->request->headers->get($this->config['headerName']);
         $controllerString = $this->request->attributes->get('_controller');
         if (!$controllerString) {
@@ -81,8 +82,9 @@ class ControllerVoter extends Voter
             return false;
         }
         $controller = [
-            'class' => $tmp[0],
-            'method' => $tmp[1],
+            'class'      => $tmp[0],
+            'method'     => $tmp[1],
+            'httpMethod' => $this->request->getMethod(),
         ];
 
         return $this->inspector->resolveController($user, $code, $controller);

@@ -60,19 +60,21 @@ class GAChecker implements CodeCheckerInterface
      * @return bool
      * @throws \Exception
      */
-    public function verify($code, UserInterface $user, $entity, $method = 'PUT', array $payload = []): bool
+    public function verify(?string $code, ?UserInterface $user, $entity = null, string $method = null, array $payload = []): bool
     {
         if (!$code) {
             return false;
         }
 
-        $oldTimestamp = $payload['oldTimestamp'] ?? null;
         $secret = $payload['secret'] ?? null;
         if ($this->oneTimeCode) {
+            // Restore
+            $oldTimestamp = null;
+
             $timestamp = $this->ga->verifyKeyNewer($secret, $code, $oldTimestamp, $this->window);
 
             if ($timestamp) {
-                // store
+                // Store
             }
         } else {
             $timestamp = $this->ga->verify($code, $secret, $this->window);

@@ -19,6 +19,7 @@ use Targus\G2faCodeInspector\Annotations\Check;
 use Targus\G2faCodeInspector\Annotations\Operation;
 use Targus\G2faCodeInspector\Exceptions\Exception;
 use Targus\G2faCodeInspector\Interfaces\CheckerDefinerInterface;
+use Targus\G2faCodeInspector\Interfaces\CodeCheckerInterface;
 
 
 /**
@@ -111,7 +112,7 @@ class Inspector
      *
      * @throws \Exception
      */
-    public function resolve($entity, UserInterface $user, array $context, $code)
+    public function resolve($entity, ?UserInterface $user, array $context, ?string $code)
     {
         if (!array_key_exists('operation_type', $context) || $context['operation_type'] !== 'item') {
             return true;
@@ -119,10 +120,12 @@ class Inspector
         if (!array_key_exists('item_operation_name', $context)) {
             return true;
         }
+
         $operation = $context['item_operation_name'];
         $uof = $this->em->getUnitOfWork();
         $uof->computeChangeSets();
         $changeSet = $uof->getEntityChangeSet($entity);
+
         foreach (array_keys($changeSet) as $propertyName) {
             $propertyReflection = self::$reflectionHelper->getPropertyReflection($entity, $propertyName);
             /** @var Check $propertyAnnotation */
@@ -130,6 +133,7 @@ class Inspector
             if (!$propertyAnnotation) {
                 continue;
             }
+
             switch ($operation) {
                 case 'GET':
                     $operationMeta = $propertyAnnotation->get;
@@ -143,6 +147,7 @@ class Inspector
                 default:
                     return true;
             }
+
             /** @var $operationMeta Operation */
             $operationExpr = $operationMeta->condition ?? $propertyAnnotation->condition ?? false;
             $expressionLanguage = new ExpressionLanguage();
@@ -159,6 +164,8 @@ class Inspector
             if (!$definer) {
                 throw new Exception("Undefined service '{$definerId}'");
             }
+
+            /** @var CodeCheckerInterface $checker */
             $checker = $definer->defineChecker($user, $entity, $operation, ['secret' => $secret]);
             if (!$checker) {
                 continue;
@@ -173,18 +180,17 @@ class Inspector
     }
 
     /**
-     * @param        $user
-     * @param string $code
-     * @param array  $controller
+     * @param UserInterface $user
+     * @param string        $code
+     * @param array         $controller
      *
      * @return bool
      * @throws Exception
      * @throws \ReflectionException
      */
-    public function resolveController($user, $code, array $controller)
+    public function resolveController(?UserInterface $user, ?string $code, array $controller)
     {
         $methodReflection = self::$reflectionHelper->getMethodReflection($controller['class'], $controller['method']);
-        /** @var Check $propertyAnnotation */
         $methodAnnotation = self::$reflectionHelper->getMethodAnnotation($methodReflection, Check::class);
         if (null === $methodAnnotation) {
             $methodAnnotation = new Check();
@@ -205,12 +211,14 @@ class Inspector
         if (!$definer) {
             throw new Exception("Undefined service '{$definerId}'");
         }
-        $checker = $definer->defineChecker($user, null, null, ['secret' => $secret]);
+
+        /** @var CodeCheckerInterface $checker */
+        $checker = $definer->defineChecker($user, null, $controller['httpMethod'], ['secret' => $secret]);
         if (!$checker) {
             return true;
         }
 
-        if (!$checker->verify($code, $user, null, null, ['secret' => $secret])) {
+        if (!$checker->verify($code, $user, null, $controller['httpMethod'], ['secret' => $secret])) {
             return false;
         }
 

@@ -37,7 +37,7 @@ class GADefiner implements CheckerDefinerInterface
      *
      * @return CodeCheckerInterface|null
      */
-    public function defineChecker(UserInterface $user, $entity, $method = 'PUT', array $payload = []): ?CodeCheckerInterface
+    public function defineChecker(?UserInterface $user, $entity = null, string $method = null, array $payload = []): ?CodeCheckerInterface
     {
         return $this->gaChecker;
     }
