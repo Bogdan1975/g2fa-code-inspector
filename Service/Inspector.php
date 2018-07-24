@@ -122,9 +122,9 @@ class Inspector
         }
 
         $operation = $context['item_operation_name'];
-        $uof = $this->em->getUnitOfWork();
-        $uof->computeChangeSets($this->em->getClassMetadata(get_class($entity)), $entity);
-        $changeSet = $uof->getEntityChangeSet($entity);
+        $uow = $this->em->getUnitOfWork();
+        $uow->computeChangeSet($this->em->getClassMetadata(get_class($entity)), $entity);
+        $changeSet = $uow->getEntityChangeSet($entity);
 
         foreach (array_keys($changeSet) as $propertyName) {
             $propertyReflection = self::$reflectionHelper->getPropertyReflection($entity, $propertyName);
@@ -170,8 +170,12 @@ class Inspector
             if (!$checker) {
                 continue;
             }
-            $uof->clear(get_class($entity));
-            $this->em->merge($entity);
+
+            // Clear Computed ChangeSet
+            // Any doctrine flushes (e.g. $em->flush($someEntity) or $em->flush()) actually
+            // flushes all previously computed change sets, because we clear UOW and reattach our $entity
+            $uow->clear(get_class($entity));
+            $uow->merge($entity);
 
             if (!$checker->verify($code, $user, $entity, $operation, ['secret' => $secret])) {
                 return false;
