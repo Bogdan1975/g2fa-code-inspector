@@ -6,7 +6,7 @@ services:
 
     targus.2fa.inspector:
         class: Targus\G2faCodeInspector\Service\Inspector
-        arguments: ['@service_container', '@doctrine.orm.entity_manager', '@targus.2fa.reflection_helper', '%targus.g2fa_code_inspector%']
+        arguments: ['@service_container', '@doctrine.orm.entity_manager', '@targus.2fa.reflection_helper', '@targus.change_detector','%targus.g2fa_code_inspector%']
 
     targus.2fa.entity_voter:
         class:      Targus\G2faCodeInspector\Security\Voter\EntityVoter
@@ -31,3 +31,8 @@ services:
         class:  Targus\G2faCodeInspector\Service\GADefiner
         arguments: ['@targus.2fa.ga_checker']
         public: true
+
+    targus.change_detector:
+        class: Targus\G2faCodeInspector\Service\ChangeDetection\ChangeDetector
+        arguments: ['@doctrine.orm.entity_manager']
+

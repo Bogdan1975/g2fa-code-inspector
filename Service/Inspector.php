@@ -20,6 +20,7 @@ use Targus\G2faCodeInspector\Annotations\Operation;
 use Targus\G2faCodeInspector\Exceptions\Exception;
 use Targus\G2faCodeInspector\Interfaces\CheckerDefinerInterface;
 use Targus\G2faCodeInspector\Interfaces\CodeCheckerInterface;
+use Targus\G2faCodeInspector\Service\ChangeDetection\ChangeDetector;
 
 
 /**
@@ -54,6 +55,11 @@ class Inspector
     private $sc;
 
     /**
+     * @var ChangeDetector
+     */
+    private $cd;
+
+    /**
      * @var array
      */
     private $config;
@@ -67,10 +73,11 @@ class Inspector
      * @param ReflectionHelper       $helper
      * @param array                  $config
      */
-    public function __construct(ContainerInterface $sc, EntityManagerInterface $em, ReflectionHelper $helper, $config)
+    public function __construct(ContainerInterface $sc, EntityManagerInterface $em, ReflectionHelper $helper, ChangeDetector $cd,  $config)
     {
         $this->sc = $sc;
         $this->em = $em;
+        $this->cd = $cd;
         $this->config = $config;
 
         // a full list of extractors is shown further below
@@ -122,9 +129,7 @@ class Inspector
         }
 
         $operation = $context['item_operation_name'];
-        $uow = $this->em->getUnitOfWork();
-        $uow->computeChangeSet($this->em->getClassMetadata(get_class($entity)), $entity);
-        $changeSet = $uow->getEntityChangeSet($entity);
+        $changeSet = $this->cd->detectChanges($entity);
 
         foreach (array_keys($changeSet) as $propertyName) {
             $propertyReflection = self::$reflectionHelper->getPropertyReflection($entity, $propertyName);
@@ -170,12 +175,6 @@ class Inspector
             if (!$checker) {
                 continue;
             }
-
-            // Clear Computed ChangeSet
-            // Any doctrine flushes (e.g. $em->flush($someEntity) or $em->flush()) actually
-            // flushes all previously computed change sets, because we clear UOW and reattach our $entity
-            $uow->clear(get_class($entity));
-            $uow->merge($entity);
 
             if (!$checker->verify($code, $user, $entity, $operation, ['secret' => $secret])) {
                 return false;
