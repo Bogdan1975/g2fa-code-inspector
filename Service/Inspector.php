@@ -123,7 +123,7 @@ class Inspector
 
         $operation = $context['item_operation_name'];
         $uof = $this->em->getUnitOfWork();
-        $uof->computeChangeSets();
+        $uof->computeChangeSets($this->em->getClassMetadata(get_class($entity)), $entity);
         $changeSet = $uof->getEntityChangeSet($entity);
 
         foreach (array_keys($changeSet) as $propertyName) {
@@ -170,6 +170,8 @@ class Inspector
             if (!$checker) {
                 continue;
             }
+            $uof->clear(get_class($entity));
+            $this->em->merge($entity);
 
             if (!$checker->verify($code, $user, $entity, $operation, ['secret' => $secret])) {
                 return false;
