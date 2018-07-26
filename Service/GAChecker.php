@@ -66,7 +66,11 @@ class GAChecker implements CodeCheckerInterface
             return false;
         }
 
-        $secret = $payload['secret'] ?? null;
+        if (!isset($payload['secret'])) {
+            throw new \InvalidArgumentException('Have no GoogleAuth Secret to process');
+        }
+        $secret = $payload['secret'];
+
         if ($this->oneTimeCode) {
             // Restore
             $oldTimestamp = null;
