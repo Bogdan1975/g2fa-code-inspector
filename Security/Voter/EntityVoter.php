@@ -54,7 +54,7 @@ class EntityVoter extends Voter
 
     protected function supports($attribute, $subject)
     {
-        return (bool)$this->request->attributes->get('_api_normalization_context');
+        return ($this->request->attributes->has('_api_normalization_context') && $this->request->attributes->has('data'));
     }
 
     /**
@@ -74,10 +74,7 @@ class EntityVoter extends Voter
         $subject = $this->request->attributes->get('data');
         $context = $this->request->attributes->get('_api_normalization_context');
         $code = $this->request->headers->get($this->config['headerName']);
-        if ($context) {
-            return $this->inspector->resolve($subject, $user, $context, $code);
-        }
 
-        return true;
+        return $this->inspector->resolve($subject, $user, $context, $code);
     }
 }
