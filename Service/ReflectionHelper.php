@@ -9,10 +9,14 @@
 
 namespace Targus\G2faCodeInspector\Service;
 
-
 use Doctrine\Common\Annotations\Reader;
 use Targus\G2faCodeInspector\Exceptions\Exception;
 
+
+/**
+ * Class ReflectionHelper
+ * @package Targus\G2faCodeInspector\Service
+ */
 class ReflectionHelper
 {
 
@@ -84,7 +88,7 @@ class ReflectionHelper
     }
 
     /**
-     * @param mixed$arg
+     * @param mixed $arg
      * @param $propertyName
      * @return \ReflectionProperty
      * @throws \Exception

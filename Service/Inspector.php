@@ -130,9 +130,13 @@ class Inspector
 
         $operation = $context['item_operation_name'];
         $changeSet = $this->cd->detectChanges($entity);
+        $reflection = self::$reflectionHelper->getClassReflection($entity);
+        if ($reflection->implementsInterface(\Doctrine\ORM\Proxy\Proxy::class)) {
+            $reflection = self::$reflectionHelper->getParentReflection($reflection);
+        }
 
         foreach (array_keys($changeSet) as $propertyName) {
-            $propertyReflection = self::$reflectionHelper->getPropertyReflection($entity, $propertyName);
+            $propertyReflection = self::$reflectionHelper->getPropertyReflection($reflection, $propertyName);
             /** @var Check $propertyAnnotation */
             $propertyAnnotation = self::$reflectionHelper->getPropertyAnnotation($propertyReflection, Check::class);
             if (!$propertyAnnotation) {
