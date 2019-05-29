@@ -15,6 +15,7 @@ use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
 use Targus\G2faCodeInspector\Annotations\Check;
 use Targus\G2faCodeInspector\Annotations\Operation;
 use Targus\G2faCodeInspector\Exceptions\Exception;
@@ -115,25 +116,20 @@ class Inspector
      * @param array         $context
      * @param string        $code
      *
-     * @return bool
+     * @return int
      *
      * @throws \Exception
      */
     public function resolve($entity, ?UserInterface $user, array $context, ?string $code)
     {
-        if (!array_key_exists('operation_type', $context) || $context['operation_type'] !== 'item') {
-            return true;
-        }
-        if (!array_key_exists('item_operation_name', $context)) {
-            return true;
-        }
-
         $operation = $context['item_operation_name'];
         $changeSet = $this->cd->detectChanges($entity);
         $reflection = self::$reflectionHelper->getClassReflection($entity);
         if ($reflection->implementsInterface(\Doctrine\ORM\Proxy\Proxy::class)) {
             $reflection = self::$reflectionHelper->getParentReflection($reflection);
         }
+
+        $vote = VoterInterface::ACCESS_ABSTAIN;
 
         foreach (array_keys($changeSet) as $propertyName) {
             $propertyReflection = self::$reflectionHelper->getPropertyReflection($reflection, $propertyName);
@@ -154,7 +150,7 @@ class Inspector
                     $operationMeta = $propertyAnnotation->post;
                     break;
                 default:
-                    return true;
+                    return VoterInterface::ACCESS_ABSTAIN;
             }
 
             /** @var $operationMeta Operation */
@@ -180,12 +176,14 @@ class Inspector
                 continue;
             }
 
-            if (!$checker->verify($code, $user, $entity, $operation, ['secret' => $secret])) {
-                return false;
+            $verifyResult = $checker->verify($code, $user, $entity, $operation, ['secret' => $secret]);
+            if (!$verifyResult) {
+                return VoterInterface::ACCESS_DENIED;
             }
+            $vote = VoterInterface::ACCESS_GRANTED;
         }
 
-        return true;
+        return $vote;
     }
 
     /**
